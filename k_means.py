@@ -1,4 +1,6 @@
 import csv
+import matplotlib.pyplot as plt
+import numpy as np
 import nltk
 from nltk.corpus import stopwords
 from bs4 import BeautifulSoup
@@ -12,7 +14,7 @@ import nltk
 
 from sklearn import cluster
 from sklearn import metrics
-
+from sklearn.decomposition import PCA
 
 contraction_mapping = {"ain't": "is not", "aren't": "are not","can't": "cannot", "'cause": "because", "could've": "could have", "couldn't": "could not",
 
@@ -61,13 +63,13 @@ contraction_mapping = {"ain't": "is not", "aren't": "are not","can't": "cannot",
                            "you're": "you are", "you've": "you have"}
 
 
-review = []
+reviews = []
 y = []
 with open('B007JFMH8M.txt') as csv_file:
     csv_reader = csv.reader(csv_file, delimiter=',')
     for row in csv_reader:
         y.append(row[8])
-        review.append(row[9])
+        reviews.append(row[9])
 
 
 stop_words = set(stopwords.words('english')) 
@@ -87,8 +89,8 @@ def text_cleaner(text):
     return (" ".join(long_words)).strip()
 
 cleaned_text = []
-for i in range(len(review)):
-    review[i] = text_cleaner(review[i])
+for i in range(len(reviews)):
+    reviews[i] = text_cleaner(reviews[i])
 
 def summary_cleaner(text):
     newString = re.sub('"','', text)
@@ -108,27 +110,61 @@ cleaned_summary = []
 for i in range(len(y)):
     y[i] = summary_cleaner(y[i])
 
-review = [x.split(" ") for x in review]
+reviews = [x.split(" ") for x in reviews]
 
 # training model
-model = Word2Vec(review, min_count=1)
+model = Word2Vec(reviews, min_count=1)
+def vectorizer(sent, m):
+    vec = []
+    numw = 0
+    for w in sent:
+        try:
+            if numw == 0:
+                vec = m[w]
+            else: vec = np.add(vec, m[w])
+            numw += 1
+        except:
+            pass
+    return np.asarray(vec)/numw
+
+l = []
+for i in reviews:
+    l.append(vectorizer(i, model))
+
 # get vector data
-print(dir(model.vocabulary))
-X = model.wv[model.wv.vocab]
-NUM_CLUSTERS=3
-kclusterer = KMeansClusterer(NUM_CLUSTERS, distance=nltk.cluster.util.cosine_distance, repeats=25)
-assigned_clusters = kclusterer.cluster(X, assign_clusters=True)
-print (assigned_clusters)
+X =  np.array(l)
 
-words = list(model.wv.vocab)
-for i, word in enumerate(words):
-    print (word + ":" + str(assigned_clusters[i]))
-
-
-
-kmeans = cluster.KMeans(n_clusters=NUM_CLUSTERS)
+wcss = []
+NUM_CLUSTERS = 3
+kmeans = cluster.KMeans(n_clusters=NUM_CLUSTERS, max_iter = 100,init = 'k-means++', random_state = 42)
 kmeans.fit(X)
+labels = kmeans.fit_predict(X)
+print(labels)
 
+pca = PCA(n_components=NUM_CLUSTERS).fit(X)
+coords = pca.transform(X)
+label_colors = ["red", "green", "blue"]
+colors = [label_colors[i] for i in labels]
+plt.scatter(coords[:, 0], coords[:, 1], c = colors)
+centroids = kmeans.cluster_centers_
+centroid_coords = pca.transform(centroids)
+plt.scatter(centroid_coords[:, 0], centroid_coords[:, 1], marker="X", s = 200)
+plt.show()
+"""
+for NUM_CLUSTERS in range(1,15):
+    print("num cluster", NUM_CLUSTERS)
+    kmeans = cluster.KMeans(n_clusters=NUM_CLUSTERS, init = 'k-means++', random_state = 42)
+    kmeans.fit(X)
+    wcss.append(kmeans.inertia_)
+
+plt.plot(range(1,15), wcss)
+plt.title("Elbow Method")
+plt.xlabel("num cluster")
+plt.ylabel("WCSS")
+plt.show()
+"""
+
+"""
 labels = kmeans.labels_
 centroids = kmeans.cluster_centers_
 
@@ -144,3 +180,4 @@ silhouette_score = metrics.silhouette_score(X, labels, metric='euclidean')
 
 print ("Silhouette_score: ")
 print (silhouette_score)
+"""
