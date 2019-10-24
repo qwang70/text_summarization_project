@@ -15,6 +15,7 @@ import nltk
 from sklearn import cluster
 from sklearn import metrics
 from sklearn.decomposition import PCA
+from gensim.models.doc2vec import Doc2Vec, TaggedDocument
 
 contraction_mapping = {"ain't": "is not", "aren't": "are not","can't": "cannot", "'cause": "because", "could've": "could have", "couldn't": "could not",
 
@@ -63,13 +64,15 @@ contraction_mapping = {"ain't": "is not", "aren't": "are not","can't": "cannot",
                            "you're": "you are", "you've": "you have"}
 
 
-reviews = []
-y = []
+scores = []
+original_reviews = []
+summaries = []
 with open('B007JFMH8M.txt') as csv_file:
     csv_reader = csv.reader(csv_file, delimiter=',')
     for row in csv_reader:
-        y.append(row[8])
-        reviews.append(row[9])
+        scores.append(row[6])
+        summaries.append(row[8])
+        original_reviews.append(row[9])
 
 
 stop_words = set(stopwords.words('english')) 
@@ -89,8 +92,9 @@ def text_cleaner(text):
     return (" ".join(long_words)).strip()
 
 cleaned_text = []
-for i in range(len(reviews)):
-    reviews[i] = text_cleaner(reviews[i])
+reviews = [0] * (len(original_reviews))
+for i in range(len(original_reviews)):
+    reviews[i] = text_cleaner(original_reviews[i])
 
 def summary_cleaner(text):
     newString = re.sub('"','', text)
@@ -107,12 +111,23 @@ def summary_cleaner(text):
 
 #Call the above function
 cleaned_summary = []
-for i in range(len(y)):
-    y[i] = summary_cleaner(y[i])
+for i in range(len(summaries)):
+    summaries[i] = summary_cleaner(summaries[i])
 
-reviews = [x.split(" ") for x in reviews]
+#reviews = [x.split(" ") for x in reviews]
 
 # training model
+## Use Doc2Vec
+reviews= [TaggedDocument(doc, [i]) for i, doc in enumerate(reviews)]
+model = Doc2Vec(reviews, vector_size=5, window=2, min_count=1, workers=4)
+l = []
+for idx in range(len(reviews)):
+    l.append(model.docvecs[idx])
+
+# get vector data
+X =  np.array(l)
+"""
+## Use Word2Vec
 model = Word2Vec(reviews, min_count=1)
 def vectorizer(sent, m):
     vec = []
@@ -133,46 +148,32 @@ for i in reviews:
 
 # get vector data
 X =  np.array(l)
-
-wcss = []
-NUM_CLUSTERS = 3
-kmeans = cluster.KMeans(n_clusters=NUM_CLUSTERS, max_iter = 100,init = 'k-means++', random_state = 42)
-kmeans.fit(X)
-labels = kmeans.fit_predict(X)
-print(labels)
-
-pca = PCA(n_components=NUM_CLUSTERS).fit(X)
-coords = pca.transform(X)
-label_colors = ["red", "green", "blue"]
-colors = [label_colors[i] for i in labels]
-plt.scatter(coords[:, 0], coords[:, 1], c = colors)
-centroids = kmeans.cluster_centers_
-centroid_coords = pca.transform(centroids)
-plt.scatter(centroid_coords[:, 0], centroid_coords[:, 1], marker="X", s = 200)
-plt.show()
 """
-for NUM_CLUSTERS in range(1,15):
+
+"""
+# K means
+kmeans = []
+wcss = []
+# Code that find the num cluster
+for NUM_CLUSTERS in range(1,20):
     print("num cluster", NUM_CLUSTERS)
     kmeans = cluster.KMeans(n_clusters=NUM_CLUSTERS, init = 'k-means++', random_state = 42)
     kmeans.fit(X)
     wcss.append(kmeans.inertia_)
 
-plt.plot(range(1,15), wcss)
+plt.plot(range(1,20), wcss)
 plt.title("Elbow Method")
 plt.xlabel("num cluster")
 plt.ylabel("WCSS")
 plt.show()
 """
+wcss = []
+NUM_CLUSTERS = 3
+kmeans = cluster.KMeans(n_clusters=NUM_CLUSTERS, max_iter = 100,init = 'k-means++', random_state = 42)
+kmeans.fit(X)
+labels = kmeans.fit_predict(X)
 
-"""
-labels = kmeans.labels_
-centroids = kmeans.cluster_centers_
-
-print ("Cluster id labels for inputted data")
-print (labels)
-print ("Centroids data")
-print (centroids)
-
+# Metrics
 print ("Score (Opposite of the value of X on the K-means objective which is Sum of distances of samples to their closest cluster center):")
 print (kmeans.score(X))
 
@@ -180,4 +181,35 @@ silhouette_score = metrics.silhouette_score(X, labels, metric='euclidean')
 
 print ("Silhouette_score: ")
 print (silhouette_score)
-"""
+
+# Compute the closest data
+alldistances = kmeans.fit_transform(X)
+alldistances = [np.sum(dist**2) for dist in alldistances]
+closest_idx = [-1]*NUM_CLUSTERS
+for i in range(len(alldistances)):
+    cluster = labels[i]
+    if closest_idx[cluster] == -1:
+        closest_idx[cluster] = i
+    else:
+        if alldistances[i] < alldistances[closest_idx[cluster]]:
+            closest_idx[cluster] = i
+
+# Print sentence
+print("Sentence closest to the center of the cluster")
+for idx in closest_idx:
+    print(original_reviews[idx])
+    print("Idx", idx, "Distance", alldistances[idx], "Score", scores[idx])
+    print()
+
+
+
+# PCA
+pca = PCA(n_components=NUM_CLUSTERS).fit(X)
+coords = pca.transform(X)
+label_colors = ["red", "green", "blue", "cyan", "magenta", "yellow"]
+colors = [label_colors[i] for i in labels]
+plt.scatter(coords[:, 0], coords[:, 1], c = colors)
+centroids = kmeans.cluster_centers_
+centroid_coords = pca.transform(centroids)
+plt.scatter(centroid_coords[:, 0], centroid_coords[:, 1], marker="X", s = 200)
+plt.show()
