@@ -118,17 +118,17 @@ for i in range(len(summaries)):
 
 # training model
 ## Use Doc2Vec
-reviews= [TaggedDocument(doc, [i]) for i, doc in enumerate(reviews)]
-model = Doc2Vec(reviews, vector_size=5, window=2, min_count=1, workers=4)
+tagged_reviews= [TaggedDocument(doc, [i]) for i, doc in enumerate(reviews)]
+model = Doc2Vec(tagged_reviews, vector_size=10, window=2, min_count=1, workers=4)
 l = []
-for idx in range(len(reviews)):
+for idx in range(len(tagged_reviews)):
     l.append(model.docvecs[idx])
 
 # get vector data
 X =  np.array(l)
 """
 ## Use Word2Vec
-model = Word2Vec(reviews, min_count=1)
+model = Word2Vec(tagged_reviews, min_count=1)
 def vectorizer(sent, m):
     vec = []
     numw = 0
@@ -143,7 +143,7 @@ def vectorizer(sent, m):
     return np.asarray(vec)/numw
 
 l = []
-for i in reviews:
+for i in tagged_reviews:
     l.append(vectorizer(i, model))
 
 # get vector data
@@ -168,7 +168,7 @@ plt.ylabel("WCSS")
 plt.show()
 """
 wcss = []
-NUM_CLUSTERS = 3
+NUM_CLUSTERS = 2
 kmeans = cluster.KMeans(n_clusters=NUM_CLUSTERS, max_iter = 100,init = 'k-means++', random_state = 42)
 kmeans.fit(X)
 labels = kmeans.fit_predict(X)
@@ -198,7 +198,14 @@ for i in range(len(alldistances)):
 print("Sentence closest to the center of the cluster")
 for idx in closest_idx:
     print(original_reviews[idx])
-    print("Idx", idx, "Distance", alldistances[idx], "Score", scores[idx])
+    print("Idx", idx, "Distance", alldistances[idx], "Score", scores[idx], summaries[idx])
+    print(summaries[idx])
+    print(reviews[idx])
+    common = set(summaries[idx]).intersection(set(reviews[idx]))
+    precision = 1.0 * len(common) / len(reviews[idx])
+    recall = 1.0 * len(common) / len(summaries[idx])
+    f1 = (2 * precision * recall) / (precision + recall)
+    print("precision", precision, "recall", recall, "f1", f1)
     print()
 
 
