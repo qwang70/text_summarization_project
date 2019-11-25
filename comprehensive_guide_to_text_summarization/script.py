@@ -46,9 +46,9 @@ for i in data['cleaned_text']:
 for i in data['cleaned_summary']:
       summary_word_count.append(len(i.split()))
 
-length_df = pd.DataFrame({'text':text_word_count, 'summary':summary_word_count})
-length_df.hist(bins = 30)
-plt.show()
+#length_df = pd.DataFrame({'text':text_word_count, 'summary':summary_word_count})
+#length_df.hist(bins = 30)
+#plt.show()
 
 max_len_text=500
 max_len_summary=10
@@ -136,11 +136,13 @@ es = EarlyStopping(monitor='val_loss', mode='min', verbose=1)
 history=model.fit([x_tr,y_tr[:,:-1]], y_tr.reshape(y_tr.shape[0],y_tr.shape[1], 1)[:,1:] ,epochs=50,callbacks=[es],batch_size=512, validation_data=([x_val,y_val[:,:-1]], y_val.reshape(y_val.shape[0],y_val.shape[1], 1)[:,1:]))
 
 
+"""
 from matplotlib import pyplot 
 pyplot.plot(history.history['loss'], label='train') 
 pyplot.plot(history.history['val_loss'], label='test') 
 pyplot.legend() 
 pyplot.show()
+"""
 
 reverse_target_word_index=y_tokenizer.index_word
 reverse_source_word_index=x_tokenizer.index_word
