@@ -14,7 +14,7 @@ import warnings
 pd.set_option("display.max_colwidth", 200)
 warnings.filterwarnings("ignore")
 
-data=pd.read_csv("../../amazon-fine-food-reviews/concatednated_summary.csv")
+data=pd.read_csv("./concatednated_summary.csv")
 data.drop_duplicates(subset=['Text'],inplace=True)  #dropping duplicates
 data.dropna(axis=0,inplace=True)   #dropping na
 
