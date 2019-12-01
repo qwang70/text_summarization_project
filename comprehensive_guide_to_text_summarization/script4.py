@@ -50,9 +50,8 @@ for i in data['cleaned_summary']:
     if(len(i.split())<=8):
         cnt=cnt+1
 print(cnt/len(data['cleaned_summary']))
-print("!!!!")
 
-max_text_len=300
+max_text_len=500
 max_summary_len=20
 
 cleaned_text =np.array(data['cleaned_text'])
@@ -281,13 +280,16 @@ def decode_sequence(input_seq):
     decoded_sentence = ''
     while not stop_condition:
       
+        print("target_seq", len(target_seq))
+        print("e_out", len(e_out))
+        print("e_h", len(e_h))
+        print("e_c", len(e_c))
         output_tokens, h, c = decoder_model.predict([target_seq] + [e_out, e_h, e_c])
 
         # Sample a token
         sampled_token_index = np.argmax(output_tokens[0, -1, :])
         if sampled_token_index == 0:
             sampled_token_index = 1
-        print(sampled_token_index)
         sampled_token = reverse_target_word_index[sampled_token_index]
         
         if(sampled_token!='eostok'):
