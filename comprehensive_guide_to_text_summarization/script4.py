@@ -13,6 +13,7 @@ import warnings
 pd.set_option("display.max_colwidth", 200)
 warnings.filterwarnings("ignore")
 data=pd.read_csv("./concatednated_summary.csv",nrows=10000)
+#data=pd.read_csv("../../amazon-fine-food-reviews/Reviews.csv",nrows=10000)
 data.drop_duplicates(subset=['Text'],inplace=True)#dropping duplicates
 data.dropna(axis=0,inplace=True)#dropping na
 data.info()
@@ -26,8 +27,6 @@ data['cleaned_text']=cleaned_text
 data['cleaned_summary']=cleaned_summary
 data.replace('', np.nan, inplace=True)
 data.dropna(axis=0,inplace=True)
-print(2)
-print(len(data))
 import matplotlib.pyplot as plt
 
 text_word_count = []
@@ -43,7 +42,7 @@ for i in data['cleaned_summary']:
 length_df = pd.DataFrame({'text':text_word_count, 'summary':summary_word_count})
 
 length_df.hist(bins = 30)
-plt.show()
+#plt.show()
 
 cnt=0
 for i in data['cleaned_summary']:
@@ -68,8 +67,6 @@ for i in range(len(cleaned_text)):
 df=pd.DataFrame({'text':short_text,'summary':short_summary})
 
 df['summary'] = df['summary'].apply(lambda x : 'sostok '+ x + ' eostok')
-print('df_length')
-print(len(df))
 from sklearn.model_selection import train_test_split
 x_tr,x_val,y_tr,y_val=train_test_split(np.array(df['text']),np.array(df['summary']),test_size=0.1,random_state=0,shuffle=True)
 
@@ -116,7 +113,7 @@ x_voc   =  x_tokenizer.num_words + 1
 y_tokenizer = Tokenizer()   
 y_tokenizer.fit_on_texts(list(y_tr))
 
-thresh=6
+thresh=5
 
 cnt=0
 tot_cnt=0
@@ -134,9 +131,11 @@ print("% of rare words in vocabulary:",(cnt/tot_cnt)*100)
 print("Total Coverage of rare words:",(freq/tot_freq)*100)
 
 #prepare a tokenizer for reviews on training data
+print("tot_cnt", tot_cnt, "cnt", cnt)
 y_tokenizer = Tokenizer(num_words=tot_cnt-cnt) 
 y_tokenizer.fit_on_texts(list(y_tr))
 
+print(sorted(y_tokenizer.word_index, key=y_tokenizer.word_index.get, reverse=False))
 #convert text sequences into integer sequences
 y_tr_seq    =   y_tokenizer.texts_to_sequences(y_tr) 
 y_val_seq   =   y_tokenizer.texts_to_sequences(y_val) 
@@ -144,8 +143,10 @@ y_val_seq   =   y_tokenizer.texts_to_sequences(y_val)
 #padding zero upto maximum length
 y_tr    =   pad_sequences(y_tr_seq, maxlen=max_summary_len, padding='post')
 y_val   =   pad_sequences(y_val_seq, maxlen=max_summary_len, padding='post')
+#y_tokenizer.fit_on_texts(list(y_tr))
 
 #size of vocabulary
+print("size of voc", len(y_val), y_val)
 y_voc  =   y_tokenizer.num_words +1
 
 y_tokenizer.word_counts['sostok'],len(y_tr)
@@ -228,17 +229,20 @@ model.compile(optimizer='rmsprop', loss='sparse_categorical_crossentropy')
 
 es = EarlyStopping(monitor='val_loss', mode='min', verbose=1,patience=2)
 
-history=model.fit([x_tr,y_tr[:,:-1]], y_tr.reshape(y_tr.shape[0],y_tr.shape[1], 1)[:,1:] ,epochs=5,callbacks=[es],batch_size=128, validation_data=([x_val,y_val[:,:-1]], y_val.reshape(y_val.shape[0],y_val.shape[1], 1)[:,1:]))
+# Build dict
+reverse_target_word_index=y_tokenizer.index_word
+reverse_source_word_index=x_tokenizer.index_word
+target_word_index=y_tokenizer.word_index
+print(reverse_target_word_index)
+
+# Fit
+history=model.fit([x_tr,y_tr[:,:-1]], y_tr.reshape(y_tr.shape[0],y_tr.shape[1], 1)[:,1:] ,epochs=50, callbacks=[es],batch_size=128, validation_data=([x_val,y_val[:,:-1]], y_val.reshape(y_val.shape[0],y_val.shape[1], 1)[:,1:]))
 
 from matplotlib import pyplot
 pyplot.plot(history.history['loss'], label='train')
 pyplot.plot(history.history['val_loss'], label='test')
 pyplot.legend()
-pyplot.show()
-
-reverse_target_word_index=y_tokenizer.index_word
-reverse_source_word_index=x_tokenizer.index_word
-target_word_index=y_tokenizer.word_index
+#pyplot.show()
 
 # Encode the input sequence to get the feature vector
 encoder_model = Model(inputs=encoder_inputs,outputs=[encoder_outputs, state_h, state_c])
@@ -280,16 +284,11 @@ def decode_sequence(input_seq):
     decoded_sentence = ''
     while not stop_condition:
       
-        print("target_seq", len(target_seq))
-        print("e_out", len(e_out))
-        print("e_h", len(e_h))
-        print("e_c", len(e_c))
+        #print("target_seq", target_seq.size())
         output_tokens, h, c = decoder_model.predict([target_seq] + [e_out, e_h, e_c])
 
         # Sample a token
-        sampled_token_index = np.argmax(output_tokens[0, -1, :])
-        if sampled_token_index == 0:
-            sampled_token_index = 1
+        sampled_token_index = np.argmax(output_tokens[0, -1, :]) + 1
         sampled_token = reverse_target_word_index[sampled_token_index]
         
         if(sampled_token!='eostok'):
