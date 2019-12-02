@@ -1,0 +1,28 @@
+<class 'pandas.core.frame.DataFrame'>
+Int64Index: 135 entries, 0 to 144
+Data columns (total 3 columns):
+ProductId    135 non-null object
+Text         135 non-null object
+Summary      135 non-null object
+dtypes: object(3)
+memory usage: 4.2+ KB
+0.9777777777777777
+% of rare words in vocabulary: 71.97894233070113
+Total Coverage of rare words: 19.730941704035875
+% of rare words in vocabulary: 85.1063829787234
+Total Coverage of rare words: 37.142857142857146
+tot_cnt 235 cnt 200
+['sostok', 'eostok', 'great', 'flavor', 'good', 'delicious', 'best', 'love', 'tasty', 'quality', 'taste', 'price', 'healthy', 'tea', 'expensive', 'perfect', 'easy', 'sweet', 'favorite', 'instant', 'wonderful', 'product', 'spicy', 'amazon', 'chocolate', 'cheap', 'high', 'little', 'excellent', 'candy', 'sauce', 'light', 'refreshing', 'coffee', 'really', 'strong', 'soup', 'sugar', 'salt', 'fresh', 'like', 'fine', 'long', 'convenient', 'drink', 'milk', 'shape', 'unique', 'decent', 'money', 'dry', 'horrible', 'texture', 'packaging', 'treats', 'watery', 'tastes', 'coconut', 'cook', 'salty', 'deal', 'soft', 'amazing', 'health', 'enjoy', 'disappointed', 'tasting', 'awful', 'addictive', 'vegan', 'looking', 'miso', 'taco', 'seasoning', 'simple', 'sea', 'juice', 'terrific', 'herbal', 'discouraging', 'weak', 'pleased', 'siberian', 'kittens', 'gentle', 'smooth', 'balanced', 'simply', 'ramen', 'aroma', 'organic', 'moderately', 'sweetened', 'serve', 'well', 'run', 'bike', 'carry', 'efficient', 'relaxing', 'everyday', 'worth', 'try', 'relax', 'remedy', 'creamy', 'enjoyable', 'ecnomic', 'hardly', 'waste', 'disappoint', 'wasting', 'sticky', 'dog', 'loves', 'mostly', 'broth', 'cooks', 'super', 'fast', 'pasta', 'lovely', 'golden', 'color', 'childhood', 'twizzlers', 'curry', 'expect', 'disgusting', 'yummy', 'slightly', 'odd', 'flavorful', 'delightful', 'ceylon', 'dogs', 'allergic', 'food', 'brown', 'sugur', 'raw', 'advertised', 'local', 'grocery', 'hot', 'crunchy', 'full', 'chemical', 'diversed', 'prepare', 'shipping', 'cost', 'low', 'carb', 'chewy', 'garlic', 'soy', 'fair', 'saltiness', 'made', 'usa', 'tough', 'mine', 'smoothness', 'tomato', 'ketchep', 'last', 'energy', 'outstanding', 'design', 'teeth', 'ahmad', 'years', 'clean', 'worry', 'choking', 'child', 'making', 'suitable', 'holiday', 'season', 'speedy', 'delivery', 'loved', 'baby', 'much', 'without', 'preservatives', 'training', 'choice', 'greatest', 'size', 'cute', 'affordable', 'saffron', 'awesome', 'authentic', 'use', 'alternative', 'regular', 'water', 'bit', 'worse', 'nice', 'moist', 'balance', 'floral', 'gift', 'cucumber', 'item', 'bad', 'seal', 'broken', 'goot', 'sharing', 'blend', 'everything', 'expected', 'ultimately', 'exquisite', 'content', 'gifts', 'enough', 'mix', 'sour', 'better', 'peets', 'prices', 'enjoyed', 'value', 'chinese', 'spice', 'stayed', 'definitely', 'natural']
+size of voc 12 [[ 1  5 29  3 14  2  0  0  0  0  0  0  0  0  0  0  0  0  0  0]
+ [ 1 11  2  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0]
+ [ 1 19  9  2  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0]
+ [ 1 13  2  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0]
+ [ 1  3  2  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0]
+ [ 1  3 29  2  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0]
+ [ 1  3  2  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0]
+ [ 1  5  4  9  2  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0]
+ [ 1  3 10  2  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0]
+ [ 1 15  2  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0]
+ [ 1 12  5  4  2  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0]
+ [ 1  2  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0]]
+[<tf.Tensor 'bidirectional/Identity:0' shape=(None, 500, 600) dtype=float32>, <tf.Tensor 'bidirectional/Identity_1:0' shape=(None, 300) dtype=float32>, <tf.Tensor 'bidirectional/Identity_2:0' shape=(None, 300) dtype=float32>, <tf.Tensor 'bidirectional/Identity_3:0' shape=(None, 300) dtype=float32>, <tf.Tensor 'bidirectional/Identity_4:0' shape=(None, 300) dtype=float32>]
