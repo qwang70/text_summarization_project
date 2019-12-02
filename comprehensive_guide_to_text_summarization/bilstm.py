@@ -188,16 +188,16 @@ encoder_inputs = Input(shape=(max_text_len,))
 enc_emb =  Embedding(x_voc, embedding_dim,trainable=True)(encoder_inputs)
 
 #encoder lstm 1
-encoder_lstm1 = Bidirectional(LSTM(latent_dim,return_sequences=True,return_state=True,dropout=0.4,recurrent_dropout=0.4))
+encoder_lstm1 = Bidirectional(LSTM(latent_dim,return_sequences=True,return_state=True,dropout=0.4,recurrent_dropout=0.4), mode='concat')
 print(encoder_lstm1(enc_emb))
 encoder_output1, state_h1, state_c1 = encoder_lstm1(enc_emb)
 
 #encoder lstm 2
-encoder_lstm2 = Bidirectional(LSTM(latent_dim,return_sequences=True,return_state=True,dropout=0.4,recurrent_dropout=0.4))
+encoder_lstm2 = Bidirectional(LSTM(latent_dim,return_sequences=True,return_state=True,dropout=0.4,recurrent_dropout=0.4), mode='concat')
 encoder_output2, state_h2, state_c2 = encoder_lstm2(encoder_output1)
 
 #encoder lstm 3
-encoder_lstm3=Bidirectional(LSTM(latent_dim, return_state=True, return_sequences=True,dropout=0.4,recurrent_dropout=0.4))
+encoder_lstm3=Bidirectional(LSTM(latent_dim, return_state=True, return_sequences=True,dropout=0.4,recurrent_dropout=0.4), mode='concat')
 encoder_outputs, state_h, state_c= encoder_lstm3(encoder_output2)
 
 # Set up the decoder, using `encoder_states` as initial state.
@@ -207,7 +207,7 @@ decoder_inputs = Input(shape=(None,))
 dec_emb_layer = Embedding(y_voc, embedding_dim,trainable=True)
 dec_emb = dec_emb_layer(decoder_inputs)
 
-decoder_lstm = Bidirectional(LSTM(latent_dim, return_sequences=True, return_state=True,dropout=0.4,recurrent_dropout=0.2))
+decoder_lstm = Bidirectional(LSTM(latent_dim, return_sequences=True, return_state=True,dropout=0.4,recurrent_dropout=0.2), mode='concat')
 decoder_outputs,decoder_fwd_state, decoder_back_state = decoder_lstm(dec_emb,initial_state=[state_h, state_c])
 
 # Attention layer
