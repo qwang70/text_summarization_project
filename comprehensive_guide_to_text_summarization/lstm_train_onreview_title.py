@@ -108,7 +108,9 @@ from sklearn.model_selection import train_test_split
 x_tr,x_val,y_tr,y_val=train_test_split(np.array(df['text'][:len(review_data)]),np.array(df['summary'][:len(review_data)]),test_size=0.1,random_state=0,shuffle=True)
 x_test = df['text'][len(review_data):]
 y_test = df['summary'][len(review_data):]
-
+y_test = concat_data['cleaned_summary'].values.tolist()
+print(y_test[0])
+quit()
 
 from keras.preprocessing.text import Tokenizer 
 from keras.preprocessing.sequence import pad_sequences
@@ -181,12 +183,10 @@ y_tokenizer.fit_on_texts(list(y_tr))
 #convert text sequences into integer sequences
 y_tr_seq    =   y_tokenizer.texts_to_sequences(y_tr) 
 y_val_seq   =   y_tokenizer.texts_to_sequences(y_val) 
-y_test_seq   =   y_tokenizer.texts_to_sequences(y_test) 
 
 #padding zero upto maximum length
 y_tr    =   pad_sequences(y_tr_seq, maxlen=max_summary_len, padding='post')
 y_val   =   pad_sequences(y_val_seq, maxlen=max_summary_len, padding='post')
-y_test   =   pad_sequences(y_test_seq, maxlen=max_summary_len, padding='post')
 
 #size of vocabulary
 print("size of voc", len(y_val))
@@ -212,7 +212,7 @@ def delete_empty_sentence(x, y):
 
 x_tr, y_tr = delete_empty_sentence(x_tr, y_tr)
 x_val, y_val = delete_empty_sentence(x_val, y_val)
-x_test, y_test = delete_empty_sentence(x_test, y_test)
+#x_test, y_test = delete_empty_sentence(x_test, y_test)
 
 from keras import backend as K 
 K.clear_session()
@@ -227,10 +227,6 @@ def generate_snapshot_name():
         '_{}-{}-{}-{}'.format(now_time.month, now_time.day, now_time.hour, now_time.minute)
 
     return snapshot_dir
-
-SNAPSHOT_NAME = generate_snapshot_name()
-if not os.path.exists(SNAPSHOT_NAME):
-    os.makedirs(SNAPSHOT_NAME)
 
 # Encoder
 encoder_inputs = Input(shape=(max_text_len,))
@@ -287,6 +283,12 @@ target_word_index=y_tokenizer.word_index
 
 # Fit
 history=model.fit([x_tr,y_tr[:,:-1]], y_tr.reshape(y_tr.shape[0],y_tr.shape[1], 1)[:,1:] ,epochs=50, callbacks=[es],batch_size=128, validation_data=([x_val,y_val[:,:-1]], y_val.reshape(y_val.shape[0],y_val.shape[1], 1)[:,1:]))
+
+# Create folder to store result
+SNAPSHOT_NAME = generate_snapshot_name()
+if not os.path.exists(SNAPSHOT_NAME):
+    os.makedirs(SNAPSHOT_NAME)
+
 with open(SNAPSHOT_NAME + '/trainHistoryDict', 'wb') as file_pi:
         pickle.dump(history.history, file_pi)
 
