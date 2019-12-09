@@ -11,6 +11,9 @@ from tensorflow.keras.models import Model
 from tensorflow.keras.callbacks import EarlyStopping
 import matplotlib.pyplot as plt
 import pylab as pl
+import pickle
+import datetime
+import os
 
 from preprocess import text_cleaner
 
@@ -19,6 +22,8 @@ import pdb
 import warnings
 pd.set_option("display.max_colwidth", 200)
 warnings.filterwarnings("ignore")
+
+SNAPSHOT_DIR = "snapshot/"
 
 def viz_dist(data, title=""):
     text_word_count = []
@@ -39,7 +44,7 @@ def viz_dist(data, title=""):
 
 # concated summary
 concat_data=pd.read_csv("./concatednated_summary.csv",nrows=10000)
-review_data=pd.read_csv("../../amazon-fine-food-reviews/Reviews.csv",nrows=10000)
+review_data=pd.read_csv("./Reviews.csv",nrows=10000)
 concat_data.drop_duplicates(subset=['Text'],inplace=True)#dropping duplicates
 concat_data.dropna(axis=0,inplace=True)#dropping na
 cleaned_text = []
@@ -99,15 +104,10 @@ for i in range(len(cleaned_text)):
 df=pd.DataFrame({'text':short_text,'summary':short_summary})
 
 df['summary'] = df['summary'].apply(lambda x : 'sostok '+ x + ' eostok')
-#from sklearn.model_selection import train_test_split
-#x_tr,x_val,y_tr,y_val=train_test_split(np.array(df['text']),np.array(df['summary']),test_size=0.1,random_state=0,shuffle=True)
-from sklearn.utils import shuffle
-x_tr = df['text'][:len(review_data)]
-y_tr = df['summary'][:len(review_data)]
-x_tr, y_tr = shuffle(x_tr, y_tr, random_state=0)
-x_val = df['text'][len(review_data):]
-y_val = df['summary'][len(review_data):]
-x_val, y_val = shuffle(x_val, y_val, random_state=0)
+from sklearn.model_selection import train_test_split
+x_tr,x_val,y_tr,y_val=train_test_split(np.array(df['text'][:len(review_data)]),np.array(df['summary'][:len(review_data)]),test_size=0.1,random_state=0,shuffle=True)
+x_test = df['text'][len(review_data):]
+y_test = df['summary'][len(review_data):]
 
 
 from keras.preprocessing.text import Tokenizer 
@@ -141,10 +141,12 @@ x_tokenizer.fit_on_texts(list(x_tr))
 #convert text sequences into integer sequences
 x_tr_seq    =   x_tokenizer.texts_to_sequences(x_tr) 
 x_val_seq   =   x_tokenizer.texts_to_sequences(x_val)
+x_test_seq   =   x_tokenizer.texts_to_sequences(x_test)
 
 #padding zero upto maximum length
 x_tr    =   pad_sequences(x_tr_seq,  maxlen=max_text_len, padding='post')
 x_val   =   pad_sequences(x_val_seq, maxlen=max_text_len, padding='post')
+x_test   =   pad_sequences(x_test_seq, maxlen=max_text_len, padding='post')
 
 #size of vocabulary ( +1 for padding token)
 x_voc   =  x_tokenizer.num_words + 1
@@ -179,11 +181,12 @@ y_tokenizer.fit_on_texts(list(y_tr))
 #convert text sequences into integer sequences
 y_tr_seq    =   y_tokenizer.texts_to_sequences(y_tr) 
 y_val_seq   =   y_tokenizer.texts_to_sequences(y_val) 
+y_test_seq   =   y_tokenizer.texts_to_sequences(y_test) 
 
 #padding zero upto maximum length
 y_tr    =   pad_sequences(y_tr_seq, maxlen=max_summary_len, padding='post')
 y_val   =   pad_sequences(y_val_seq, maxlen=max_summary_len, padding='post')
-#y_tokenizer.fit_on_texts(list(y_tr))
+y_test   =   pad_sequences(y_test_seq, maxlen=max_summary_len, padding='post')
 
 #size of vocabulary
 print("size of voc", len(y_val))
@@ -191,35 +194,43 @@ y_voc  =   y_tokenizer.num_words +1
 
 y_tokenizer.word_counts['sostok'],len(y_tr)
 
-ind=[]
-for i in range(len(y_tr)):
-    cnt=0
-    for j in y_tr[i]:
-        if j!=0:
-            cnt=cnt+1
-    if(cnt==2):
-        ind.append(i)
 
-y_tr=np.delete(y_tr,ind, axis=0)
-x_tr=np.delete(x_tr,ind, axis=0)
+def delete_empty_sentence(x, y):
+    #  deleting the rows that contain only START and END tokens
+    ind=[]
+    for i in range(len(y)):
+        cnt=0
+        for j in y[i]:
+            if j!=0:
+                cnt=cnt+1
+        if(cnt==2):
+            ind.append(i)
 
-ind=[]
-for i in range(len(y_val)):
-    cnt=0
-    for j in y_val[i]:
-        if j!=0:
-            cnt=cnt+1
-    if(cnt==2):
-        ind.append(i)
+    y=np.delete(y,ind, axis=0)
+    x=np.delete(x,ind, axis=0)
+    return x, y
 
-y_val=np.delete(y_val,ind, axis=0)
-x_val=np.delete(x_val,ind, axis=0)
+x_tr, y_tr = delete_empty_sentence(x_tr, y_tr)
+x_val, y_val = delete_empty_sentence(x_val, y_val)
+x_test, y_test = delete_empty_sentence(x_test, y_test)
 
 from keras import backend as K 
 K.clear_session()
 
 latent_dim = 300
 embedding_dim=100
+
+def generate_snapshot_name():
+
+    now_time = datetime.datetime.now()
+    snapshot_dir = SNAPSHOT_DIR + 'lstm_emb_{}_lat_{}_epoch_'.format(embedding_dim, latent_dim) +  \
+        '_{}-{}-{}-{}'.format(now_time.month, now_time.day, now_time.hour, now_time.minute)
+
+    return snapshot_dir
+
+SNAPSHOT_NAME = generate_snapshot_name()
+if not os.path.exists(SNAPSHOT_NAME):
+    os.makedirs(SNAPSHOT_NAME)
 
 # Encoder
 encoder_inputs = Input(shape=(max_text_len,))
@@ -273,16 +284,17 @@ es = EarlyStopping(monitor='val_loss', mode='min', verbose=1,patience=2)
 reverse_target_word_index=y_tokenizer.index_word
 reverse_source_word_index=x_tokenizer.index_word
 target_word_index=y_tokenizer.word_index
-print(reverse_target_word_index)
 
 # Fit
-history=model.fit([x_tr,y_tr[:,:-1]], y_tr.reshape(y_tr.shape[0],y_tr.shape[1], 1)[:,1:] ,epochs=1, callbacks=[es],batch_size=128, validation_data=([x_val,y_val[:,:-1]], y_val.reshape(y_val.shape[0],y_val.shape[1], 1)[:,1:]))
+history=model.fit([x_tr,y_tr[:,:-1]], y_tr.reshape(y_tr.shape[0],y_tr.shape[1], 1)[:,1:] ,epochs=50, callbacks=[es],batch_size=128, validation_data=([x_val,y_val[:,:-1]], y_val.reshape(y_val.shape[0],y_val.shape[1], 1)[:,1:]))
+with open(SNAPSHOT_NAME + '/trainHistoryDict', 'wb') as file_pi:
+        pickle.dump(history.history, file_pi)
 
 from matplotlib import pyplot
 pyplot.plot(history.history['loss'], label='train')
 pyplot.plot(history.history['val_loss'], label='test')
 pyplot.legend()
-#pyplot.show()
+pyplot.savefig(SNAPSHOT_NAME + '/loss.png')
 
 # Encode the input sequence to get the feature vector
 encoder_model = Model(inputs=encoder_inputs,outputs=[encoder_outputs, state_h, state_c])
@@ -362,17 +374,12 @@ def seq2text(input_seq):
             newString=newString+reverse_source_word_index[i]+' '
     return newString
 
-"""
-for i in range(0, len(x_tr)):
-    print("Review:",seq2text(x_tr[i]))
-    print("Original summary:",seq2summary(y_tr[i]), flush=True)
-    print("Predicted summary:",decode_sequence(x_tr[i].reshape(1,max_text_len)), flush=True)
-    print("\n")
-"""
-
-for i in range(0, len(x_val)):
-    print("Review val:",seq2text(x_val[i]))
-    print("Original summary:",seq2summary(y_val[i]), flush=True)
-    print("Predicted summary:",decode_sequence(x_val[i].reshape(1,max_text_len)), flush=True)
-    print("\n")
+with open(SNAPSHOT_NAME + "/result.txt", "w") as f:
+    for i in range(0, len(x_test)):
+        f.write("Review test: " +seq2text(x_test[i]))
+        f.write("\n")
+        f.write("Original summary: "+ seq2summary(y_test[i]))
+        f.write("\n")
+        f.write("Predicted summary:" + decode_sequence(x_test[i].reshape(1,max_text_len)))
+        f.write("\n\n")
 
