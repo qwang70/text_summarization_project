@@ -7,7 +7,7 @@ from bs4 import BeautifulSoup
 from keras.preprocessing.text import Tokenizer 
 from keras.preprocessing.sequence import pad_sequences
 from nltk.corpus import stopwords
-from tensorflow.keras.layers import Input, LSTM, Embedding, Dense, Concatenate, TimeDistributed
+from tensorflow.keras.layers import Input, LSTM, Embedding, Dense, Concatenate, TimeDistributed, Bidirectional
 from tensorflow.keras.models import Model
 from tensorflow.keras.callbacks import EarlyStopping
 import matplotlib.pyplot as plt
@@ -37,7 +37,7 @@ def get_arguments():
     Returns:
       A list of parsed arguments.
     """
-    parser = argparse.ArgumentParser(description="LSTM")
+    parser = argparse.ArgumentParser(description="BiLSTM")
     parser.add_argument("--epoch", type=int, default=ITER_SIZE)
     parser.add_argument("--embedding", type=int, default=embedding_dim)
     parser.add_argument("--latent", type=int, default=latent)
@@ -239,7 +239,7 @@ K.clear_session()
 def generate_snapshot_name():
 
     now_time = datetime.datetime.now()
-    snapshot_dir = SNAPSHOT_DIR + 'lstm_emb_{}_lat_{}_epochs_{}'.format(args.embedding, args.latent, args.epoch) +  \
+    snapshot_dir = SNAPSHOT_DIR + 'bilstm_emb_{}_lat_{}_epochs_{}'.format(args.embedding, args.latent, args.epoch) +  \
         '_{}-{}-{}-{}'.format(now_time.month, now_time.day, now_time.hour, now_time.minute)
 
     return snapshot_dir
@@ -251,16 +251,19 @@ encoder_inputs = Input(shape=(max_text_len,))
 enc_emb =  Embedding(x_voc, embedding_dim,trainable=True)(encoder_inputs)
 
 #encoder lstm 1
-encoder_lstm1 = LSTM(latent_dim,return_sequences=True,return_state=True,dropout=0.4,recurrent_dropout=0.4)
-encoder_output1, state_h1, state_c1 = encoder_lstm1(enc_emb)
+encoder_lstm1 = Bidirectional(LSTM(latent_dim,return_sequences=True,return_state=True,dropout=0.4,recurrent_dropout=0.4), merge_mode='concat')
+encoder_output1, forward_state_h1, forward_state_c1, backward_state_h1, backward_state_c1 = encoder_lstm1(enc_emb)
 
 #encoder lstm 2
-encoder_lstm2 = LSTM(latent_dim,return_sequences=True,return_state=True,dropout=0.4,recurrent_dropout=0.4)
-encoder_output2, state_h2, state_c2 = encoder_lstm2(encoder_output1)
+encoder_lstm2 = Bidirectional(LSTM(latent_dim,return_sequences=True,return_state=True,dropout=0.4,recurrent_dropout=0.4), merge_mode='concat')
+encoder_output2, forward_state_h2, forward_state_c2, backward_state_h2, backward_state_c2 = encoder_lstm2(encoder_output1)
 
 #encoder lstm 3
-encoder_lstm3=LSTM(latent_dim, return_state=True, return_sequences=True,dropout=0.4,recurrent_dropout=0.4)
-encoder_outputs, state_h, state_c= encoder_lstm3(encoder_output2)
+encoder_lstm3=Bidirectional(LSTM(latent_dim, return_state=True, return_sequences=True,dropout=0.4,recurrent_dropout=0.4), merge_mode='concat')
+encoder_outputs, forward_state_h, forward_state_c, backward_state_h, backward_state_c = encoder_lstm3(encoder_output2)
+
+state_h = Concatenate()([forward_state_h, backward_state_h])
+state_c = Concatenate()([forward_state_c, backward_state_c])
 
 # Set up the decoder, using `encoder_states` as initial state.
 decoder_inputs = Input(shape=(None,))
@@ -269,7 +272,7 @@ decoder_inputs = Input(shape=(None,))
 dec_emb_layer = Embedding(y_voc, embedding_dim,trainable=True)
 dec_emb = dec_emb_layer(decoder_inputs)
 
-decoder_lstm = LSTM(latent_dim, return_sequences=True, return_state=True,dropout=0.4,recurrent_dropout=0.2)
+decoder_lstm = LSTM(latent_dim*2, return_sequences=True, return_state=True,dropout=0.4,recurrent_dropout=0.2)
 decoder_outputs,decoder_fwd_state, decoder_back_state = decoder_lstm(dec_emb,initial_state=[state_h, state_c])
 
 # Attention layer
@@ -319,9 +322,9 @@ encoder_model = Model(inputs=encoder_inputs,outputs=[encoder_outputs, state_h, s
 
 # Decoder setup
 # Below tensors will hold the states of the previous time step
-decoder_state_input_h = Input(shape=(latent_dim,))
-decoder_state_input_c = Input(shape=(latent_dim,))
-decoder_hidden_state_input = Input(shape=(max_text_len,latent_dim))
+decoder_state_input_h = Input(shape=(latent_dim *2,))
+decoder_state_input_c = Input(shape=(latent_dim *2,))
+decoder_hidden_state_input = Input(shape=(max_text_len,latent_dim *2))
 
 # Get the embeddings of the decoder sequence
 dec_emb2= dec_emb_layer(decoder_inputs) 
