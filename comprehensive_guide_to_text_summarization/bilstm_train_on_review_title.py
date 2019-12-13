@@ -15,6 +15,7 @@ import pylab as pl
 import pickle
 import datetime
 import os
+import calculate_metrics
 
 from preprocess import text_cleaner
 
@@ -406,18 +407,17 @@ metrics = {
 }
 
 def cal_metrics(metrics, original_summary, predicted_summary):
-    # TODO: fill in here
-    metrics["precision"].append()
-    metrics["recall"].append()
-    metrics["f1"].append()
-    metrics["rouge2_precision"].append()
-    metrics["rouge2_recall"].append()
-    metrics["rouge2_f1"].append()
+    metrics["precision"].append(calculate_metrics.compute_precision(original_summary, predicted_summary))
+    metrics["recall"].append(calculate_metrics.compute_recall(original_summary, predicted_summary))
+    metrics["f1"].append(calculate_metrics.compute_f1(original_summary, predicted_summary))
+    metrics["rouge2_precision"].append(calculate_metrics.compute_rouge2_precision(original_summary, predicted_summary))
+    metrics["rouge2_recall"].append(calculate_metrics.compute_rouge2_recall(original_summary, predicted_summary))
+    metrics["rouge2_f1"].append(calculate_metrics.compute_rouge2_f1(original_summary, predicted_summary))
 
 with open(SNAPSHOT_NAME + "/result.txt", "w") as f:
     for i in range(0, len(x_test)):
         text = seq2text(x_test[i])
-        original_summary = seq2summary(y_test[i])
+        original_summary =y_test[i]
         predicted_summary = decode_sequence(x_test[i].reshape(1,max_text_len))
         f.write("Review test: " + text)
         f.write("\n")
@@ -429,4 +429,4 @@ with open(SNAPSHOT_NAME + "/result.txt", "w") as f:
 
 with open(SNAPSHOT_NAME + "/metrics.txt", "w") as f:
     for k in metrics:
-        f.write("{}: {}".format(np.mean(metrics[k])))
+        f.write("{}: {}".format(k, np.mean(metrics[k])))
