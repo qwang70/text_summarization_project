@@ -15,6 +15,7 @@ import pylab as pl
 import pickle
 import datetime
 import os
+import calculate_metrics
 
 from preprocess import text_cleaner
 
@@ -40,9 +41,10 @@ def get_arguments():
     parser = argparse.ArgumentParser(description="LSTM")
     parser.add_argument("--epoch", type=int, default=ITER_SIZE)
     parser.add_argument("--embedding", type=int, default=embedding_dim)
-    parser.add_argument("--latent", type=int, default=latent)
+    parser.add_argument("--latent", type=int, default=latent_dim)
     parser.add_argument("--max-text-len", type=int, default=max_text_len)
     parser.add_argument("--max-summary-len", type=int, default=max_summary_len)
+    return parser.parse_args()
 
 args = get_arguments()
 embedding_dim, latent_dim, max_text_len, max_summary_len = args.embedding, args.latent, args.max_text_len, args.max_summary_len
@@ -67,7 +69,7 @@ def viz_dist(data, title=""):
     plt.show()
 
 # concated summary
-concat_data=pd.read_csv("./concatednated_summary.csv",nrows=10000)
+concat_data=pd.read_csv("./concatednated_summary.csv",nrows=1000)
 review_data=pd.read_csv("./Reviews.csv",nrows=10000)
 concat_data.drop_duplicates(subset=['Text'],inplace=True)#dropping duplicates
 concat_data.dropna(axis=0,inplace=True)#dropping na
@@ -403,18 +405,19 @@ metrics = {
 
 def cal_metrics(metrics, original_summary, predicted_summary):
     # TODO: fill in here
-    metrics["precision"].append()
-    metrics["recall"].append()
-    metrics["f1"].append()
-    metrics["rouge2_precision"].append()
-    metrics["rouge2_recall"].append()
-    metrics["rouge2_f1"].append()
+    metrics["precision"].append(calculate_metrics.compute_precision(original_summary, predicted_summary))
+    metrics["recall"].append(calculate_metrics.compute_recall(original_summary, predicted_summary))
+    metrics["f1"].append(calculate_metrics.compute_f1(original_summary, predicted_summary))
+    metrics["rouge2_precision"].append(calculate_metrics.compute_rouge2_precision(original_summary, predicted_summary))
+    metrics["rouge2_recall"].append(calculate_metrics.compute_rouge2_recall(original_summary, predicted_summary))
+    metrics["rouge2_f1"].append(calculate_metrics.compute_rouge2_f1(original_summary, predicted_summary))
 
 with open(SNAPSHOT_NAME + "/result.txt", "w") as f:
     for i in range(0, len(x_test)):
         text = seq2text(x_test[i])
-        original_summary = seq2summary(y_test[i])
+        original_summary = y_test[i]
         predicted_summary = decode_sequence(x_test[i].reshape(1,max_text_len))
+        print("original summary", original_summary)
         f.write("Review test: " + text)
         f.write("\n")
         f.write("Original summary: "+ original_summary)
@@ -425,4 +428,4 @@ with open(SNAPSHOT_NAME + "/result.txt", "w") as f:
 
 with open(SNAPSHOT_NAME + "/metrics.txt", "w") as f:
     for k in metrics:
-        f.write("{}: {}".format(np.mean(metrics[k])))
+        f.write("{}: {}".format(k, np.mean(metrics[k])))

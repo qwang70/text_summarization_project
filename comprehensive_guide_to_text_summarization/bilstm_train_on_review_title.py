@@ -40,9 +40,10 @@ def get_arguments():
     parser = argparse.ArgumentParser(description="BiLSTM")
     parser.add_argument("--epoch", type=int, default=ITER_SIZE)
     parser.add_argument("--embedding", type=int, default=embedding_dim)
-    parser.add_argument("--latent", type=int, default=latent)
+    parser.add_argument("--latent", type=int, default=latent_dim)
     parser.add_argument("--max-text-len", type=int, default=max_text_len)
     parser.add_argument("--max-summary-len", type=int, default=max_summary_len)
+    return parser.parse_args()
 
 args = get_arguments()
 embedding_dim, latent_dim, max_text_len, max_summary_len = args.embedding, args.latent, args.max_text_len, args.max_summary_len

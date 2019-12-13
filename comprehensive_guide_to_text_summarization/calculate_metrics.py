@@ -28,12 +28,12 @@ def compute_precision(ref, candidate):
     Result: 6/7=0.86
     """
     occurredSet = set([])
-    ref_words = ref.split(' ')
+    ref_words = list(filter(None,ref.split(' ')))
     for i in range(0, len(ref_words)):
         if special_word(ref_words[i]):
             continue
         occurredSet.add(ref_words[i])
-    input_words = candidate.split(' ')
+    input_words = list(filter(None,candidate.split(' ')))
     align = 0
     total = len(input_words)
     for i in range(0, len(input_words)):
@@ -45,11 +45,13 @@ def compute_precision(ref, candidate):
             continue
         else:
             continue
-    return align / total
+    try:
+        return align / total
+    except:
+        return 0.001
         
         
 
-print(compute_precision("the cat was under the bed", "the cat was found under the bed"))
 
 def compute_recall(ref, candidate):
     """
@@ -73,12 +75,14 @@ def compute_recall(ref, candidate):
     """
     return compute_precision(candidate, ref)
 
-print(compute_recall("the cat was under the bed", "the cat was found under the bed"))
 
-def compute_f1(ref, candiate):
+def compute_f1(ref, candidate):
     recall = compute_recall(ref, candidate)
     precision = compute_precision(ref, candidate)
-    return 2. * recall * precision / (recall + precision)
+    try:
+        return 2. * recall * precision / (recall + precision)
+    except:
+        return 0.001 
 
 #first ignore all special words, then consider as no special words
 #ROUGE2_PRECISION([I, \n, love, <q>, python], [I, love, python]) = 1
@@ -102,7 +106,7 @@ def compute_rouge2_precision(ref, candidate):
     Result: 0.67
     """
     occurredSet = set([])
-    ref_words_raw = ref.split(' ')
+    ref_words_raw = list(filter(None,ref.split(' ')))
     ref_words = []
     for i in range(0, len(ref_words_raw)):
         if special_word(ref_words_raw[i]):
@@ -111,7 +115,7 @@ def compute_rouge2_precision(ref, candidate):
             ref_words.append(ref_words_raw[i])
     for i in range(0, len(ref_words) - 1):
         occurredSet.add("" + ref_words[i] + "; " + ref_words[i+1])
-    input_words_raw = candidate.split(' ')
+    input_words_raw = list(filter(None,candidate.split(' ')))
     input_words = []
     for i in range(0, len(input_words_raw)):
         if special_word(input_words_raw[i]):
@@ -123,9 +127,11 @@ def compute_rouge2_precision(ref, candidate):
     for i in range(0, len(input_words) - 1):
         if "" + input_words[i] + "; " + input_words[i+1] in occurredSet:
             align = align + 1
-    return align / total
+    try:
+        return align / total
+    except:
+        return 0.001
     
-print(compute_rouge2_precision("the cat was under the bed", "the cat was found under the bed"))
 
 def compute_rouge2_recall(ref, candidate):
     """
@@ -148,9 +154,11 @@ def compute_rouge2_recall(ref, candidate):
     """
     return compute_rouge2_precision(candidate, ref)
 
-print(compute_rouge2_recall("the cat was under the bed", "the cat was found under the bed"))
 
-def compute_rouge2_f1(ref, candiate):
+def compute_rouge2_f1(ref, candidate):
     recall = compute_rouge2_recall(ref, candidate)
     precision = compute_rouge2_precision(ref, candidate)
-    return 2. * recall * precision / (recall + precision)
+    try:
+        return 2. * recall * precision / (recall + precision)
+    except:
+        return 0.001
