@@ -27,7 +27,7 @@ warnings.filterwarnings("ignore")
 
 ITER_SIZE = 50
 SNAPSHOT_DIR = "snapshot/"
-latent_dim = 300
+latent_dim = 200
 embedding_dim=100
 max_text_len=500
 max_summary_len=20
