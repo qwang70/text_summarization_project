@@ -7,6 +7,9 @@ Online reviews provide a promising source, yet they remain infeasible for BVI us
 
 In this repo, we employed both LSTM and bi-directional LSTM with self-attention layers and applied the beam search strategy to decode the sum- maries. Our results are comprehensive and natural enough, and we also conducted evaluations and comparisons between these different approaches.
 
+## Data
+[Selected Data](https://drive.google.com/file/d/1xA-3t33haIf-F5-kVdlL6RFJ20oVZeGJ/view?usp=sharing)
+
 ## Repository Structure
 
 - baseline: Implement our baseline using k-means. 
@@ -16,6 +19,7 @@ In this repo, we employed both LSTM and bi-directional LSTM with self-attention 
   - bilstm_train_on_review_title.py: Bi-directional LSTM model.
   - tune_param.sh: Script to tune the embedding size.
   - calculate_metrics.py: Script to compute the ROUGE-1 and ROUGE-2 score.
+  - snapshot: Experiment result folder
 - Extraction and abstrastion based models: Refer to our [other repo](https://github.com/qwang70/PreSumm) for the code and the output.
 
 ```
