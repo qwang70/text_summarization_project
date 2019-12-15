@@ -1,4 +1,4 @@
-# import...
+import numpy as np
 
 def special_word(word):
     if word == "<q>" or word == "\n" or word == "," or word == ".":
@@ -48,7 +48,7 @@ def compute_precision(ref, candidate):
     try:
         return align / total
     except:
-        return 0.001
+        return 0.00
         
         
 
@@ -82,7 +82,7 @@ def compute_f1(ref, candidate):
     try:
         return 2. * recall * precision / (recall + precision)
     except:
-        return 0.001 
+        return 0.0 
 
 #first ignore all special words, then consider as no special words
 #ROUGE2_PRECISION([I, \n, love, <q>, python], [I, love, python]) = 1
@@ -130,7 +130,7 @@ def compute_rouge2_precision(ref, candidate):
     try:
         return align / total
     except:
-        return 0.001
+        return 0.0
     
 
 def compute_rouge2_recall(ref, candidate):
@@ -161,4 +161,29 @@ def compute_rouge2_f1(ref, candidate):
     try:
         return 2. * recall * precision / (recall + precision)
     except:
-        return 0.001
+        return 0
+
+def cal_metrics(metrics, original_summary, predicted_summary):
+    # TODO: fill in here
+    metrics["precision"].append(compute_precision(original_summary, predicted_summary))
+    metrics["recall"].append(compute_recall(original_summary, predicted_summary))
+    metrics["f1"].append(compute_f1(original_summary, predicted_summary))
+    metrics["rouge2_precision"].append(compute_rouge2_precision(original_summary, predicted_summary))
+    metrics["rouge2_recall"].append(compute_rouge2_recall(original_summary, predicted_summary))
+    metrics["rouge2_f1"].append(compute_rouge2_f1(original_summary, predicted_summary))
+
+def compute(refs, candidates):
+    metrics = {
+        "precision": [],
+        "recall": [],
+        "f1": [],
+        "rouge2_precision": [],
+        "rouge2_recall": [],
+        "rouge2_f1": [],
+    }
+    for i in range(len(refs)):
+        cal_metrics(metrics, refs[i], candidates[i])
+
+    for k in metrics:
+        print("{}: {}".format(k, np.mean(metrics[k])))
+
